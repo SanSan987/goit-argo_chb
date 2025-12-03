@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow
+  namespace: infra-tools          # де встановлений ArgoCD
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: mlflow
+    targetRevision: 0.2.8         # версія Helm-чарту Bitnami MLflow
+    helm:
+      values: |
+        tracking:
+          service:
+            type: ClusterIP
+            port: 5000
+
+        ingress:
+          enabled: false
+
+        persistence:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: application        # куди деплоїмо MLflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

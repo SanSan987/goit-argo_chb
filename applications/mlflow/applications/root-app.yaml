@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-app
+  namespace: infra-tools  # де працює ArgoCD
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SanSan987/goit-argo_chb.git
+    targetRevision: main
+    path: applications      # дивиться на папку applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infra-tools
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
