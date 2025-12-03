@@ -7,10 +7,9 @@ spec:
   project: default
 
   source:
-    repoURL: https://charts.bitnami.com/bitnami
-    chart: mlflow
-    # Актуальна версія чарта з Bitnami
-    targetRevision: 1.5.7
+    repoURL: https://github.com/bitnami/charts.git
+    targetRevision: main        # гілка в репозиторії Bitnami
+    path: bitnami/mlflow        # шлях до чарта в цьому репозиторії
     helm:
       values: |
         service:
