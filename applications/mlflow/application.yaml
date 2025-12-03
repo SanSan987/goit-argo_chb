@@ -2,14 +2,15 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: mlflow
-  namespace: infra-tools        # де працює ArgoCD
+  namespace: infra-tools          # де встановлено ArgoCD
 spec:
   project: default
 
+  # Джерело: Git-репозиторій Bitnami charts
   source:
     repoURL: https://github.com/bitnami/charts.git
-    targetRevision: main        # гілка в репозиторії Bitnami
-    path: bitnami/mlflow        # шлях до чарта в цьому репозиторії
+    targetRevision: main          # основна гілка в репозиторії Bitnami
+    path: bitnami/mlflow          # шлях до Helm-чарту MLflow всередині репозиторію
     helm:
       values: |
         service:
@@ -19,14 +20,16 @@ spec:
         ingress:
           enabled: false
 
-        # Використаємо дефолтне сховище (SQLite / файлове)
+        # просте сховище (без окремої БД/об’єктного storage)
         persistence:
           enabled: false
 
+  # Куди деплоїмо MLflow
   destination:
     server: https://kubernetes.default.svc
-    namespace: application      # сюди будуть створюватися pods / svc
+    namespace: application        # тут мають з'явитись Pod/Service MLflow
 
+  # Автоматичний GitOps
   syncPolicy:
     automated:
       prune: true
