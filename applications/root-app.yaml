@@ -6,12 +6,14 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/SanSan987/goit-argo_chb.git
+    repoURL: https://github.com/SanSan987/goit-argo_chb
     targetRevision: main
     path: applications      # дивиться на папку applications
+    directory:
+      recurse: true         # щоб заходити у підпапки (mlflow/)
   destination:
     server: https://kubernetes.default.svc
-    namespace: infra-tools
+    namespace: infra-tools  # де зберігатимуться Application-ресурси
   syncPolicy:
     automated:
       prune: true
