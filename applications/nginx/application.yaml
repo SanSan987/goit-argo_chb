@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx
+  namespace: infra-tools          # де встановлений ArgoCD
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/SanSan987/goit-helm-nginx_chb.git
+    targetRevision: main
+    path: nginx                   # папка з Chart.yaml
+    helm:
+      values: |
+        replicaCount: 1
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: application        # куди деплоїмо nginx
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
