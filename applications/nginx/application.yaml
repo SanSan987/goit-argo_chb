@@ -10,9 +10,9 @@ spec:
     repoURL: https://github.com/SanSan987/goit-helm-nginx_chb
     targetRevision: main
     path: nginx                   # папка з Chart.yaml
-    helm:
-      values: |
-        - values.yaml
+    #helm:
+    #  values: |
+    #    - values.yaml
 
   destination:
     server: https://kubernetes.default.svc
