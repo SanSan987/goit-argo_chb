@@ -1,0 +1,30 @@
+# argocd/applications/minio.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd # Простір імен, де розгорнуто ArgoCD
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 14.5.3 # актуальна версія
+    chart: minio
+    helm:
+      values: |
+        auth:
+          rootUser: minio_user
+          rootPassword: minio_password
+        defaultBuckets: mlflow-artifacts
+        service:
+          type: ClusterIP
+          port: 9000
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow-infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

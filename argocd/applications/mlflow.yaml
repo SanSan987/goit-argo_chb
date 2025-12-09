@@ -1,0 +1,21 @@
+# argocd/applications/mlflow.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow-tracking-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SanSan987/goit-argo_chb # Або інший репозиторій, що містить цей маніфест
+    targetRevision: lesson-8-9
+    path: argocd/mlflow-k8s # використовуємо простий Kubernetes Deployment
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow-infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

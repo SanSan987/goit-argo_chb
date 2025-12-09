@@ -1,0 +1,14 @@
+# argocd/mlflow-k8s/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-tracking-server
+  namespace: mlflow-infra
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - protocol: TCP
+      port: 5000 # Порт, на якому доступний сервіс
+      targetPort: 5000 # Порт контейнера
+  type: ClusterIP # Доступний тільки всередині кластера

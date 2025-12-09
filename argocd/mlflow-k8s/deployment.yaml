@@ -1,0 +1,45 @@
+# argocd/mlflow-k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-tracking-server
+  namespace: mlflow-infra
+spec:
+  selector:
+    matchLabels:
+      app: mlflow
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+      - name: mlflow
+        image: ghcr.io/mlflow/mlflow:latest # Актуальний образ
+        ports:
+        - containerPort: 5000
+        env:
+          # URI для підключення до бази даних PostgreSQL, розгорнутої раніше:
+          - name: MLFLOW_TRACKING_URI
+            value: postgresql://mlflow_user:mlflow_password@postgres-mlflow.mlflow-infra.svc.cluster.local:5432/mlflow
+          
+          # Налаштування S3-сумісного сховища (MinIO)
+          - name: AWS_ACCESS_KEY_ID
+            value: minio_user
+          - name: AWS_SECRET_ACCESS_KEY
+            value: minio_password
+          - name: MLFLOW_S3_ENDPOINT_URL
+            value: http://minio.mlflow-infra.svc.cluster.local:9000
+        
+        command:
+          - mlflow
+          - server
+          - --host
+          - 0.0.0.0
+          - --port
+          - "5000"
+          - --backend-store-uri
+          - $(MLFLOW_TRACKING_URI)
+          - --default-artifact-root
+          - s3://mlflow-artifacts/ # Назва bucket в MinIO
