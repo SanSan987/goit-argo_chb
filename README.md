@@ -94,7 +94,19 @@ nginx-nginx   LoadBalancer   172.20.224.158   ad58e0026ca2141ca87d93af977d8306-1
 Helm-чарт nginx задеплоєний через ArgoCD.
 Pod nginx працює.
 Є зовнішній доступ через LoadBalancer (*.elb.amazonaws.com).
- 
+
+Terraform для розгортання ArgoCD
+ArgoCD розгортається через Terraform з цього ж репозиторію:
+```bash
+cd terraform/argocd
+terraform init
+terraform apply
+Основні файли:
+terraform/argocd/main.tf – helm_release для ArgoCD;
+terraform/argocd/argocd.values.yaml – значення для Helm-чарта ArgoCD
+(тип сервісу, namespace infra-tools, базові налаштування).
+
+
 Примітка щодо MLflow
 На попередньому етапі в рамках цього ж завдання було реалізовано:
 ArgoCD Application для Bitnami MLflow,

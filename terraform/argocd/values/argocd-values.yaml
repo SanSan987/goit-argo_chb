@@ -1,0 +1,37 @@
+global:
+  logging:
+    format: text
+    level: info
+
+server:
+  service:
+    type: ClusterIP
+
+controller:
+  extraArgs:
+    - --status-processors=20
+    - --operation-processors=10
+
+repoServer:
+  extraArgs: []
+
+configs:
+  params:
+    server.insecure: "true"
+    server.readiness.timeout: "10s"
+    server.request.timeout: "180s"
+
+  rbac:
+    policy.default: role:readonly
+
+  cm:
+    users.anonymous.enabled: "true"
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+applicationSet:
+  enabled: true
