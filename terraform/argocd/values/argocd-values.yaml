@@ -3,7 +3,7 @@ global:
     format: text
     level: info
   
-  # === ДОДАНО: Toleration для GPU Taint (застосовується до всіх компонентів за замовчуванням) ===
+  # Toleration щоб Pods могли розміщуватися на GPU вузлах, якщо CPU-вузли перевантажені
   tolerations:
   - key: "workload"
     operator: "Equal"
@@ -14,7 +14,9 @@ server:
   service:
     type: ClusterIP
   
-  # === ДОДАНО: Toleration для server (на випадок, якщо global не спрацює) ===
+  # Зменшення реплік ArgoCD Server для уникнення недостатку ресурсів на подах
+  replicaCount: 1 
+  
   tolerations:
   - key: "workload"
     operator: "Equal"
@@ -26,7 +28,9 @@ controller:
     - --status-processors=20
     - --operation-processors=10
     
-  # === ДОДАНО: Toleration для controller ===
+  # Зменшення реплік Application Controller
+  replicaCount: 1 
+    
   tolerations:
   - key: "workload"
     operator: "Equal"
@@ -36,7 +40,9 @@ controller:
 repoServer:
   extraArgs: []
   
-  # === ДОДАНО: Toleration для repoServer ===
+  # Зменшення реплік Repo Server 
+  replicaCount: 1
+    
   tolerations:
   - key: "workload"
     operator: "Equal"
@@ -45,8 +51,9 @@ repoServer:
 
 applicationSet:
   enabled: true
+  # applicationSet-controller зазвичай має 1 репліку за замовчуванням, але для повноти можна вказати явно
+  # replicaCount: 1 
   
-  # === ДОДАНО: Toleration для applicationSet ===
   tolerations:
   - key: "workload"
     operator: "Equal"
