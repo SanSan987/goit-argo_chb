@@ -3,7 +3,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: minio
-  namespace: argocd # Простір імен, де розгорнуто ArgoCD
+  namespace: infra-tools # Простір імен, де розгорнуто ArgoCD
 spec:
   project: default
   source:
