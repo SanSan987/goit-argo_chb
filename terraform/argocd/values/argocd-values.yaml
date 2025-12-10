@@ -2,18 +2,56 @@ global:
   logging:
     format: text
     level: info
+  
+  # === ДОДАНО: Toleration для GPU Taint (застосовується до всіх компонентів за замовчуванням) ===
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
 
 server:
   service:
     type: ClusterIP
+  
+  # === ДОДАНО: Toleration для server (на випадок, якщо global не спрацює) ===
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
 
 controller:
   extraArgs:
     - --status-processors=20
     - --operation-processors=10
+    
+  # === ДОДАНО: Toleration для controller ===
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
 
 repoServer:
   extraArgs: []
+  
+  # === ДОДАНО: Toleration для repoServer ===
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
+
+applicationSet:
+  enabled: true
+  
+  # === ДОДАНО: Toleration для applicationSet ===
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
 
 configs:
   params:
@@ -32,6 +70,3 @@ dex:
 
 notifications:
   enabled: false
-
-applicationSet:
-  enabled: true
