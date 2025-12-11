@@ -1,122 +1,85 @@
 # goit-argo_chb
-ArgoCD + GitOps-інфраструктура
+MLOps Stack на AWS EKS з ArgoCD (Lesson 8-9)
+Цей проект демонструє розгортання повноцінного MLOps-стека (MLflow, PostgreSQL, MinIO, Prometheus PushGateway) на кластері AWS EKS з використанням GitOps-підходу через ArgoCD.
 
-Основні компоненти інфраструктури:
- Amazon EKS – кластер `my-education-cluster` (us-east-1)
-ArgoCD – встановлений через Terraform у namespace `infra-tools`
-Simple nginx Helm-service, який деплоїться з окремого Helm-репозиторію
-  [`goit-helm-nginx_chb`](https://github.com/SanSan987/goit-helm-nginx_chb)
-  під керуванням ArgoCD
+ІНСТРУКЦІЯ
+- Як запустити train_and_push.py:
+Для успішного запуску скрипту необхідно, щоб Pods minio-... та postgres-mlflow-postgresql-0 були у стані Running.
+Встановлення змінних середовища (PowerShell):
+У кореневій директорії experiments/ встановити URI для MLflow та PushGateway.
+PowerShell
+$env:MLFLOW_TRACKING_URI = "http://localhost:5000"
+$env:PUSHGATEWAY_URI = "localhost:9091"
+Виконання скрипту:
+PowerShell
+py train_and_push.py
 
-Структура репозиторію
+- Перевірка наявності MLflow і PushGateway у кластері:
+Наявність цих компонентів підтверджується, коли їхні Kubernetes-ресурси досягають стану Synced та Healthy в ArgoCD:
+Перевірка Pods:
+kubectl get pods -n mlflow-infra -l app.kubernetes.io/name=mlflow-tracking-server
+kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus-pushgateway
+(Очікуваний стан: 1/1 Running).
+Перевірка Service: Переконатися, що Service створені для доступу:
+kubectl get svc -n mlflow-infra | Select-String "mlflow-tracking-server"
+kubectl get svc -n monitoring | Select-String "prometheus-pushgateway"
 
-goit-argo_chb/
-├─ applications/
-│  ├─ root-app.yaml              # Root Application (app-of-apps) для ArgoCD
-│  └─ nginx/
-│     └─ application.yaml        # ArgoCD Application для nginx Helm-чарта
-├─ namespaces/
-│  ├─ infra-tools/
-│  │  └─ ns.yaml                 # Namespace для ArgoCD
-│  └─ application/
-│     └─ ns.yaml                 # Namespace, в який деплоїться nginx
-└─ README.md
-Ключові файли:
--	namespaces/infra-tools/ns.yaml – декларація namespace infra-tools, де працює ArgoCD.
--	namespaces/application/ns.yaml – декларація namespace application.
--	applications/root-app.yaml – root Application, який підтягує всі підзастосунки з каталогу
-applications/ (app-of-apps).
--	applications/nginx/application.yaml – ArgoCD Application, який:
-дивиться в репозиторій goit-helm-nginx_chb,
-бере Helm-чарт з шляху nginx,
-деплоїть його у namespace application,
-увімкнено automated sync + selfHeal,
-опція syncOptions: [CreateNamespace=true] дозволяє автоматично створювати namespace.
+- Як зробити port-forward:
+Для доступу до сервісів з локальної машини відкрити три окремі вкладки терміналу та запустити ці команди:
+ArgoCD UI (використовується для управління):
+kubectl port-forward svc/argocd-server 8080:443 -n infra-tools
+MLflow Tracking Server (для скрипту):
+kubectl port-forward svc/mlflow-tracking-server 5000:5000 -n mlflow-infra
+Prometheus PushGateway (для метрик):
+kubectl port-forward svc/prometheus-pushgateway 9091:9091 -n monitoring
 
-Інфраструктура: EKS + ArgoCD (Terraform)
-1. EKS + VPC + node groups
-У репозиторії eks-vpc-cluster (окремо від цього проекту) Terraform:
-створює VPC, сабнети, інтернет-шлюз;
-піднімає кластер my-education-cluster у us-east-1;
-створює node group (cpu_nodes-…).
-Після terraform apply:
-aws eks update-kubeconfig --region us-east-1 --name my-education-cluster
-kubectl get nodes
-2. ArgoCD через Terraform
-У каталозі terraform/argocd:
-ресурс helm_release.argocd встановлює ArgoCD у namespace infra-tools;
-після terraform apply:
-kubectl get pods -n infra-tools
-kubectl get svc  -n infra-tools
-Всі pod’и argocd-* у стані Running, сервіс argocd-server доступний як ClusterIP.
-Для доступу до UI:
-kubectl port-forward svc/argocd-server -n infra-tools 8080:443
-# в браузері: https://localhost:8080
- 
-GitOps-потік для nginx (ArgoCD + Helm)
-Окремий Helm-репозиторій:
-Окремий репозиторій:
-goit-helm-nginx_chb
-Структура:
-goit-helm-nginx_chb/
-└─ nginx/
-   ├─ Chart.yaml
-   ├─ values.yaml
-   └─ templates/
-      ├─ _helpers.tpl
-      ├─ deployment.yaml
-      └─ service.yaml
-У values.yaml сервіс налаштовано як:
-service:
-  type: LoadBalancer
-  port: 80
-ArgoCD Application для nginx (applications/nginx/application.yaml):
-Root-app (applications/root-app.yaml) додається в кластер командою:
-kubectl apply -f applications/root-app.yaml -n infra-tools
-Після цього ArgoCD автоматично підтягує і створює nginx Application.
- 
-Перевірка, що все працює
-Статус ArgoCD Applications:
-kubectl get applications -n infra-tools
-Очікувано:
-root-app – Synced / Healthy
-nginx – Synced / Healthy
-Pod’и та сервіс у namespace application:
-kubectl get pods -n application
-kubectl get svc  -n application
-Фактичний результат:
-NAME                           READY   STATUS    RESTARTS   AGE
-nginx-nginx-54c7b4dcfb-whqp9   1/1     Running   0          ...
-
-NAME          TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)        AGE
-nginx-nginx   LoadBalancer   172.20.224.158   ad58e0026ca2141ca87d93af977d8306-1483855393.us-east-1.elb.amazonaws.com   80:32582/TCP   ...
-Це підтверджує, що:
-Helm-чарт nginx задеплоєний через ArgoCD.
-Pod nginx працює.
-Є зовнішній доступ через LoadBalancer (*.elb.amazonaws.com).
-
-Terraform для розгортання ArgoCD
-ArgoCD розгортається через Terraform з цього ж репозиторію:
-```bash
-cd terraform/argocd
-terraform init
-terraform apply
-Основні файли:
-terraform/argocd/main.tf – helm_release для ArgoCD;
-terraform/argocd/argocd.values.yaml – значення для Helm-чарта ArgoCD
-(тип сервісу, namespace infra-tools, базові налаштування).
+- Як подивитись метрики в Grafana:
+Запустити Port-Forward для Grafana:
+kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
+(Якщо використовується Helm-чарт kube-prometheus-stack).
+Доступ: Відкрити http://localhost:3000 у браузері.
+Перегляд: Переходимо до Explore (Дослідження) та вибираємо джерело даних Prometheus. Можемо перевірити метрики, надіслані PushGateway (наприклад, iris_model_train_duration_seconds). 
+MLflow UI URL: http://localhost:5000
+Grafana URL:  http://localhost:3000/explore
 
 
-Примітка щодо MLflow
-На попередньому етапі в рамках цього ж завдання було реалізовано:
-ArgoCD Application для Bitnami MLflow,
-створення сервісів mlflow-minio, mlflow-postgresql, mlflow-tracking (LoadBalancer).
-Однак через обмеження ресурсів кластера (переповнення pod-слотів і пам’яті на маленьких EC2-нодах) MLflow-поди не могли стабільно перейти в стан Running.
+ПІДСУМКИ РЕЗУЛЬТАТІВ виконання Завдання:
+Категорія	Статус	Коментар
+EKS Cluster (t3.small)	✅ Успішно розгорнуто	Кластер масштабовано до 4 вузлів t3.small (оптимізація Free Tier).
+ArgoCD Instance	✅ Успішно розгорнуто	ArgoCD працює у режимі App of Apps.
+Persistent Volumes (PV/PVC)	✅ Успішно розгорнуто	Вирішено критичну проблему з дозволами IAM/CSI Driver, що дозволило успішно прив'язати томи EBS для MinIO та PostgreSQL.
+MLflow/Postgres/MinIO Deployment	Блокування	Master Application розгорнутий і згенерований, але Pods MinIO та PostgreSQL блокуються на етапі ImagePullBackOff.
+Можливість запуску train_and_push.py	❌ Не досягнуто	Запуск неможливий через відсутність підключення до MLflow (Connection Refused), оскільки Pod MLflow не може запуститися через залежності (MinIO, PostgreSQL).
+Ключові причини незавершення:
+Стійке кешування Helm: ArgoCD/Repo Server мав стійке внутрішнє кешування індексу Bitnami, що спричинило проблему "Chart Not Found" (це було ВИРІШЕНО).
+Обмеження Docker Hub (ImagePullBackOff): Фінальне блокування виникло через те, що Kubelet кешує помилку ImagePullBackOff, найбільш ймовірно, через досягнення ліміту завантажень з публічних реєстрів (Docker Hub / Bitnami), або видалення старих тегів образів.
 
-Результати з терміналу (на підтвердження):
-(base) PS C:\Users\sansa\terraform\argocd> kubectl get pods -n application
-NAME                           READY   STATUS    RESTARTS   AGE
-nginx-nginx-54c7b4dcfb-whqp9   1/1     Running   0          9m46s
-(base) PS C:\Users\sansa\terraform\argocd> kubectl get svc  -n application
-NAME          TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)        AGE
-nginx-nginx   LoadBalancer   172.20.224.158   ad58e0026ca2141ca87d93af977d8306-1483855393.us-east-1.elb.amazonaws.com   80:32582/TCP   9m48s
+Результати виведень з робочого терміналу:
+PS C:\Users\sansa\goit-argo_chb> kubectl get pods -n infra-tools
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          12h
+argocd-applicationset-controller-7d76f8784f-2k8jt   1/1     Running   0          18h
+argocd-redis-566887dfcd-7zllp                       1/1     Running   0          12h
+argocd-repo-server-5db9d847b4-4f528                 1/1     Running   0          2m13s
+argocd-server-9dbd4fbcb-lrtx4                       1/1     Running   0          12h
+
+PS C:\Users\sansa\goit-argo_chb> kubectl port-forward svc/mlflow-tracking-server 5000:5000 -n mlflow-infra
+Forwarding from 127.0.0.1:5000 -> 5000
+Forwarding from [::1]:5000 -> 5000
+
+PS C:\Users\sansa\terraform\argocd> kubectl port-forward svc/argocd-server 8080:443 -n infra-tools
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Handling connection for 8080
+Handling connection for 8080
+
+PS C:\Users\sansa\eks-vpc-cluster> kubectl port-forward svc/prometheus-pushgateway 9091:9091 -n monitoring
+Forwarding from 127.0.0.1:9091 -> 9091
+Forwarding from [::1]:9091 -> 9091
+
+PS C:\Users\sansa\goit-argo_chb> kubectl get pods -n mlflow-infra
+NAME                                      READY   STATUS             RESTARTS         AGE
+minio-84cdcc596-7hdtq                     0/1     ImagePullBackOff   0                42m
+mlflow-tracking-server-656ffcbbfd-2qn2g   0/1     CrashLoopBackOff   22 (3m53s ago)   93m
+postgres-mlflow-postgresql-0              0/1     ImagePullBackOff   0                42m
+
