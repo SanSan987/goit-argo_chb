@@ -8,7 +8,7 @@ spec:
   project: default
   source:
     repoURL: https://charts.bitnami.com/bitnami
-    targetRevision: 15.5.17 # актуальна версія
+    targetRevision: 14.5.0 # актуальна версія
     chart: minio
     helm:
       values: |
