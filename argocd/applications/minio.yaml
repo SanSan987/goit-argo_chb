@@ -7,8 +7,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://charts.bitnami.com/bitnami
-    targetRevision: 15.5.7 # актуальна версія
+    repoURL: https://minio.github.io/console-helm
+    targetRevision: 4.0.2 # актуальна версія
     chart: minio
     helm:
       values: |
