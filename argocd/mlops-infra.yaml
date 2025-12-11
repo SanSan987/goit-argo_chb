@@ -1,0 +1,23 @@
+# argocd/mlops-infra.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-infra
+  namespace: infra-tools 
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SanSan987/goit-argo_chb
+    targetRevision: lesson-8-9
+    path: argocd/applications   # ЦЕЙ ШЛЯХ ВЕДЕ ДО MINIO, POSTGRES, MLFLOW, PUSHGATEWAY YAML
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infra-tools
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
